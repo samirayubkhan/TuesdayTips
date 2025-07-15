@@ -4,7 +4,7 @@ import streamlit as st
 from googleapiclient.discovery import build
 
 # Import utilities from the main app
-from app import build_slide_images_zip, get_credentials
+from generate_infographic import build_slide_images_zip, get_credentials
 
 st.set_page_config(page_title="Download Images", page_icon="⬇️", layout="centered")
 
