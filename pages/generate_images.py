@@ -7,7 +7,7 @@ from app import build_slide_images_zip, get_credentials
 
 st.set_page_config(page_title="Generate Images from Google Slide", layout="centered")
 
-st.title("Generate Images from Google Slide")
+st.sidebar.title("Generate Images from Google Slide")
 
 st.markdown(
     """

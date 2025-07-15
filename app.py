@@ -351,6 +351,8 @@ def parse_user_content(text: str) -> Tuple[Dict[str, str], list[str]]:
 
 st.set_page_config(page_title="Generate Tuesday Tips Infographic", layout="centered")
 
+st.sidebar.title("Generate Tuesday Tips Infographic")
+
 st.title("Generate Tuesday Tips Infographic")
 
 st.markdown("""
