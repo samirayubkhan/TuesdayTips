@@ -116,8 +116,8 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
         f"""
         <style>
         .copy-btn {{
-            background-color: var(--primary-color, #FF4B4B);
-            color: white;
+            background-color: #05F283 !important;
+            color: #002B56 !important;
             border: none;
             border-radius: 0.25rem;
             padding: 0.4rem 0.9rem;
@@ -126,7 +126,7 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
             transition: background-color 0.2s ease;
         }}
         .copy-btn:hover {{
-            background-color: rgba(255, 75, 75, 0.85);
+            background-color: #05c26a !important;
         }}
         </style>
         <textarea id='{txt_id}' style='position:absolute; left:-1000px; top:-1000px;'>{safe_text}</textarea>
@@ -356,9 +356,13 @@ st.title("Generate Tuesday Tips Infographic")
 
 st.markdown("""
 Welcome! This mini-app helps you turn your AI-generated content into a polished Google Slides deck in just **four easy steps**.
+
+You will be using Gemini 2.5 Pro to generate the content.
+
+You can access gemini pro here: https://gemini.google.com/
 """)
 
-topic = st.text_input("Enter the Topic:")
+topic = st.text_input("Enter the Topic of the Infographic:")
 
 # Step 1
 st.header("Step 1: Defining Topics and Subtopics")
@@ -369,11 +373,14 @@ You’re an instructional designer with experience in creating learning content 
 The topic is: {topic} 
 """
 
-col1, col2 = st.columns([1,2])
-with col1:
-    st.markdown("1️⃣ Prompt")
-with col2:
-    clipboard_button(prompt1, label="Copy Step 1 Prompt", key="p1")
+st.markdown(
+    "<div style='display: flex; justify-content: flex-end; margin-bottom: -10px;'>",
+    unsafe_allow_html=True,
+)
+clipboard_button(prompt1, label="Copy Step 1 Prompt", key="p1")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("1️⃣ This prompt will be used to generate the topics and subtopics for the infographic.")
 with st.expander("View Step 1 Prompt", expanded=False):
     st.code(prompt1, language="text")
 
@@ -387,11 +394,14 @@ prompt2 = f"""
 You’re an instructional designer with experience in creating learning content for online courses designed for young adults. For the theme {topic}, redefine the topics and subtopics generated in the previous step into 4 lessons. Create 4 lesson outlines in a logical order, limiting each lesson to 3–4 topics or subtopics that are most relevant to the theme.
 """
 
-col1, col2 = st.columns([1,2])
-with col1:
-    st.markdown("2️⃣ Prompt")
-with col2:
-    clipboard_button(prompt2, label="Copy Step 2 Prompt", key="p2")
+st.markdown(
+    "<div style='display: flex; justify-content: flex-end; margin-bottom: -10px;'>",
+    unsafe_allow_html=True,
+)
+clipboard_button(prompt2, label="Copy Step 2 Prompt", key="p2")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("2️⃣ This prompt will be used to generate the lessons for the infographic.")
 with st.expander("View Step 2 Prompt", expanded=False):
     st.code(prompt2, language="text")
 
@@ -405,11 +415,14 @@ prompt3 = f"""
 You’re an instructional designer with experience in creating learning content for online courses designed for young adults. For the lessons outlined above for {topic}, create a detailed set of content that will help learners fully understand the concepts and be able to apply them. Create this content as a series of lessons set up in a logical sequence. Make use of questions, interesting facts, relevant examples and case studies to keep learners engaged.
 """
 
-col1, col2 = st.columns([1,2])
-with col1:
-    st.markdown("3️⃣ Prompt")
-with col2:
-    clipboard_button(prompt3, label="Copy Step 3 Prompt", key="p3")
+st.markdown(
+    "<div style='display: flex; justify-content: flex-end; margin-bottom: -10px;'>",
+    unsafe_allow_html=True,
+)
+clipboard_button(prompt3, label="Copy Step 3 Prompt", key="p3")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("3️⃣ This prompt will be used to generate the content for the lessons. Make sure you use *Deep Research* to generate the content.")
 with st.expander("View Step 3 Prompt", expanded=False):
     st.code(prompt3, language="text")
 
@@ -594,12 +607,14 @@ prompt4 = (
 # Step 4
 st.header("Step 4: Generating Slide Content")
 
-# Rebuild the UI elements that show/copy prompt4 ---------------------------
-col1, col2 = st.columns([1,2])
-with col1:
-    st.markdown("4️⃣ Prompt")
-with col2:
-    clipboard_button(prompt4, label="Copy Step 4 Prompt", key="p4")
+st.markdown("4️⃣ This prompt will be used to generate the slide content for the infographic.")
+st.markdown(
+    "<div style='display: flex; justify-content: flex-end; margin-bottom: -10px; margin-top: 4px;'>",
+    unsafe_allow_html=True,
+)
+clipboard_button(prompt4, label="Copy Step 4 Prompt", key="p4")
+st.markdown("</div>", unsafe_allow_html=True)
+
 with st.expander("View Step 4 Prompt", expanded=False):
     st.code(prompt4, language="text")
 
