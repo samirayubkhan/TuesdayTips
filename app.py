@@ -10,6 +10,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import json
 import io
+import html  # for escaping strings in clipboard button
+import streamlit.components.v1 as components
 import zipfile
 import requests
 
@@ -85,6 +87,47 @@ def build_slide_images_zip(
 
     zip_buf.seek(0)
     return zip_buf
+
+# ---------------------------------------------------------------------------
+# Clipboard helper ----------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+
+def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
+    """Render an HTML/JS button that copies *text* to the browser clipboard.
+
+    This works entirely client-side, so it does not require any server-side
+    clipboard library. The *key* ensures unique element IDs when the function
+    is used multiple times on the same page.
+    """
+    if key is None:
+        # Fallback to a simple hash for uniqueness
+        key = str(abs(hash(text)) % 10_000_000)
+
+    safe_text = html.escape(text)
+    btn_id = f"btn_{key}"
+    txt_id = f"txt_{key}"
+
+    # Inline JS copies the hidden textarea content to clipboard and gives UX
+    # feedback by temporarily changing the button label.
+    components.html(
+        f"""
+        <textarea id='{txt_id}' style='position:absolute; left:-1000px; top:-1000px;'>{safe_text}</textarea>
+        <button id='{btn_id}' style='margin-top:6px;'>{label}</button>
+        <script>
+        const btn = document.getElementById('{btn_id}');
+        btn.addEventListener('click', () => {{
+            const txt = document.getElementById('{txt_id}');
+            txt.select();
+            document.execCommand('copy');
+            const original = btn.innerText;
+            btn.innerText = '✔ Copied!';
+            setTimeout(() => btn.innerText = original, 2000);
+        }});
+        </script>
+        """,
+        height=35,
+    )
 
 # ---------------------------------------------------------------------------
 # Configuration --------------------------------------------------------------
@@ -311,13 +354,11 @@ The topic is: {topic}
 
 col1, col2 = st.columns([1,2])
 with col1:
-    st.markdown("1️⃣ Copy this prompt")
+    st.markdown("1️⃣ Prompt")
 with col2:
-    if st.button("Show Step 1 Prompt"):
-        st.code(prompt1, language="text")
-        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
+    clipboard_button(prompt1, label="Copy Step 1 Prompt", key="p1")
 with st.expander("View Step 1 Prompt", expanded=False):
-    st.text_area("Prompt", value=prompt1, height=200, disabled=True)
+    st.code(prompt1, language="text")
 
 # Step 1 output box removed – keep placeholder variable
 step1_output = ""
@@ -331,13 +372,11 @@ You’re an instructional designer with experience in creating learning content 
 
 col1, col2 = st.columns([1,2])
 with col1:
-    st.markdown("2️⃣ Copy this prompt")
+    st.markdown("2️⃣ Prompt")
 with col2:
-    if st.button("Show Step 2 Prompt"):
-        st.code(prompt2, language="text")
-        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
+    clipboard_button(prompt2, label="Copy Step 2 Prompt", key="p2")
 with st.expander("View Step 2 Prompt", expanded=False):
-    st.text_area("Prompt", value=prompt2, height=200, disabled=True)
+    st.code(prompt2, language="text")
 
 # Step 2 output box removed – keep placeholder variable
 step2_output = ""
@@ -351,13 +390,11 @@ You’re an instructional designer with experience in creating learning content 
 
 col1, col2 = st.columns([1,2])
 with col1:
-    st.markdown("3️⃣ Copy this prompt")
+    st.markdown("3️⃣ Prompt")
 with col2:
-    if st.button("Show Step 3 Prompt"):
-        st.code(prompt3, language="text")
-        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
+    clipboard_button(prompt3, label="Copy Step 3 Prompt", key="p3")
 with st.expander("View Step 3 Prompt", expanded=False):
-    st.text_area("Prompt", value=prompt3, height=200, disabled=True)
+    st.code(prompt3, language="text")
 
 # Step 3 output box removed – keep placeholder variable
 step3_output = ""
@@ -543,13 +580,11 @@ st.header("Step 4: Generating Slide Content")
 # Rebuild the UI elements that show/copy prompt4 ---------------------------
 col1, col2 = st.columns([1,2])
 with col1:
-    st.markdown("4️⃣ Copy this prompt")
+    st.markdown("4️⃣ Prompt")
 with col2:
-    if st.button("Show Step 4 Prompt"):
-        st.code(prompt4, language="text")
-        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
+    clipboard_button(prompt4, label="Copy Step 4 Prompt", key="p4")
 with st.expander("View Step 4 Prompt", expanded=False):
-    st.text_area("Prompt", value=prompt4, height=600, disabled=True)
+    st.code(prompt4, language="text")
 
 # Step 5 – Paste AI output for slides
 with st.expander("5️⃣ Paste the filled-in content", expanded=True):
