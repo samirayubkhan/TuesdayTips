@@ -349,9 +349,9 @@ def parse_user_content(text: str) -> Tuple[Dict[str, str], list[str]]:
 # Streamlit UI --------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-st.set_page_config(page_title="Tuesday Tips Slide Generator", layout="centered")
+st.set_page_config(page_title="Generate Tuesday Tips Infographic", layout="centered")
 
-st.title("Tuesday Tips Slide Generator")
+st.title("Generate Tuesday Tips Infographic")
 
 st.markdown("""
 Welcome! This mini-app helps you turn your AI-generated content into a polished Google Slides deck in just **four easy steps**.
