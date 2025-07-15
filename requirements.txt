@@ -1,0 +1,6 @@
+google-auth>=2.27.0
+google-auth-oauthlib>=1.1.0
+google-api-python-client>=2.108.0 
+streamlit>=1.33.0 
+pyperclip 
+requests>=2.31.0 
