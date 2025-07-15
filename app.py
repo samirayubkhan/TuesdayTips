@@ -350,7 +350,7 @@ def parse_user_content(text: str) -> Tuple[Dict[str, str], list[str]]:
 # Streamlit UI --------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-st.set_page_config(page_title="Generate Tuesday Tips Infographic", layout="centered")
+st.set_page_config(page_title="Generate Infographic", page_icon="🖼️", layout="centered")
 
 st.title("Generate Tuesday Tips Infographic")
 
