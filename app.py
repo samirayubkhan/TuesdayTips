@@ -109,11 +109,27 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
     txt_id = f"txt_{key}"
 
     # Inline JS copies the hidden textarea content to clipboard and gives UX
-    # feedback by temporarily changing the button label.
+    # feedback by temporarily changing the button label. Basic CSS makes it look
+    # close to Streamlit's default button style.
     components.html(
         f"""
+        <style>
+        .copy-btn {{
+            background-color: var(--primary-color, #FF4B4B);
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.4rem 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }}
+        .copy-btn:hover {{
+            background-color: rgba(255, 75, 75, 0.85);
+        }}
+        </style>
         <textarea id='{txt_id}' style='position:absolute; left:-1000px; top:-1000px;'>{safe_text}</textarea>
-        <button id='{btn_id}' style='margin-top:6px;'>{label}</button>
+        <button class='copy-btn' id='{btn_id}'>{label}</button>
         <script>
         const btn = document.getElementById('{btn_id}');
         btn.addEventListener('click', () => {{
@@ -126,7 +142,7 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
         }});
         </script>
         """,
-        height=35,
+        height=40,
     )
 
 # ---------------------------------------------------------------------------
