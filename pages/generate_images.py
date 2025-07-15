@@ -7,8 +7,6 @@ from app import build_slide_images_zip, get_credentials
 
 st.set_page_config(page_title="Generate Images from Google Slide", layout="centered")
 
-st.sidebar.title("Generate Images from Google Slide")
-
 st.markdown(
     """
     Paste a Google Slides **share link** (or just the presentation ID) below, then click
