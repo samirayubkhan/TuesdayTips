@@ -9,7 +9,6 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import json
-import pyperclip
 import io
 import zipfile
 import requests
@@ -314,9 +313,9 @@ col1, col2 = st.columns([1,2])
 with col1:
     st.markdown("1️⃣ Copy this prompt")
 with col2:
-    if st.button("Copy Step 1 Prompt"):
-        pyperclip.copy(prompt1)
-        st.success("Prompt copied to clipboard!")
+    if st.button("Show Step 1 Prompt"):
+        st.code(prompt1, language="text")
+        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
 with st.expander("View Step 1 Prompt", expanded=False):
     st.text_area("Prompt", value=prompt1, height=200, disabled=True)
 
@@ -334,9 +333,9 @@ col1, col2 = st.columns([1,2])
 with col1:
     st.markdown("2️⃣ Copy this prompt")
 with col2:
-    if st.button("Copy Step 2 Prompt"):
-        pyperclip.copy(prompt2)
-        st.success("Prompt copied to clipboard!")
+    if st.button("Show Step 2 Prompt"):
+        st.code(prompt2, language="text")
+        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
 with st.expander("View Step 2 Prompt", expanded=False):
     st.text_area("Prompt", value=prompt2, height=200, disabled=True)
 
@@ -354,9 +353,9 @@ col1, col2 = st.columns([1,2])
 with col1:
     st.markdown("3️⃣ Copy this prompt")
 with col2:
-    if st.button("Copy Step 3 Prompt"):
-        pyperclip.copy(prompt3)
-        st.success("Prompt copied to clipboard!")
+    if st.button("Show Step 3 Prompt"):
+        st.code(prompt3, language="text")
+        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
 with st.expander("View Step 3 Prompt", expanded=False):
     st.text_area("Prompt", value=prompt3, height=200, disabled=True)
 
@@ -546,9 +545,9 @@ col1, col2 = st.columns([1,2])
 with col1:
     st.markdown("4️⃣ Copy this prompt")
 with col2:
-    if st.button("Copy Step 4 Prompt"):
-        pyperclip.copy(prompt4)
-        st.success("Prompt copied to clipboard!")
+    if st.button("Show Step 4 Prompt"):
+        st.code(prompt4, language="text")
+        st.success("Prompt displayed below – select & copy it (⌘/Ctrl + C).")
 with st.expander("View Step 4 Prompt", expanded=False):
     st.text_area("Prompt", value=prompt4, height=600, disabled=True)
 
