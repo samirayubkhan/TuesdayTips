@@ -24,4 +24,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # The command to run your Streamlit app. Cloud Run forwards traffic to port 8080 by default.
-CMD ["streamlit", "run", "app.py", "--server.port", "8080", "--server.address", "0.0.0.0"] 
+CMD ["streamlit", "run", "generate_infographic.py", "--server.port", "8080", "--server.address", "0.0.0.0"] 

@@ -31,7 +31,7 @@ unset USE_SERVICE_ACCOUNT
 unset SERVICE_ACCOUNT_JSON
 
 # Run the app
-streamlit run app.py
+streamlit run generate_infographic.py
 ```
 
 ## Usage
