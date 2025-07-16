@@ -257,9 +257,24 @@ def get_credentials() -> Credentials:
         # ------------------------------------------------------------------
         # Streamlit-native OAuth flow (works in headless deployments)        
         # ------------------------------------------------------------------
-        flow = InstalledAppFlow.from_client_secrets_file(
-            "credentials.json", SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-        )
+        # Allow providing the OAuth client JSON via env-var so that hosting
+        # platforms (e.g. Streamlit Cloud secrets) don’t need a file on disk.
+        client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
+
+        if client_json_env:
+            try:
+                client_cfg = json.loads(client_json_env)
+            except json.JSONDecodeError as exc:
+                st.error(f"Invalid OAUTH_CLIENT_JSON: {exc}")
+                st.stop()
+
+            flow = InstalledAppFlow.from_client_config(
+                client_cfg, SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+            )
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                "credentials.json", SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+            )
 
         # Create the authorisation URL and ask the user to visit it in a new tab.
         auth_url, _ = flow.authorization_url(prompt="consent")
