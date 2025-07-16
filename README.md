@@ -8,27 +8,31 @@ A Streamlit app to generate Google Slides decks for instructional content, desig
 - Automatically creates and publishes a new slide deck from your content
 - Exports slide images as a ZIP file
 
-## Setup
+## Authentication modes
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/<your-username>/<repo-name>.git
-   cd <repo-name>
-   ```
+The app supports **two** authentication modes for Google APIs:
 
-2. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
+1. **User OAuth (default)** – Each user authenticates with their own Google account.  Files are created in the user’s Google Drive and their personal quota applies.
+2. **Service Account** – A robot account owns the files.  Enable by setting the `USE_SERVICE_ACCOUNT=1` environment variable (and providing credentials).
 
-3. **Google API Credentials:**
-   - Download your `credentials.json` from Google Cloud Console (OAuth 2.0 Client ID for Desktop app)
-   - Place `credentials.json` in the project root (it will generate `token.json` on first run)
+If you do **not** set `USE_SERVICE_ACCOUNT`, the app automatically starts the OAuth flow the first time it needs Drive/Slides access and stores `token.json`.  This is the simplest setup for internal users.
 
-4. **Run the app:**
-   ```sh
-   streamlit run app.py
-   ```
+### Switching back to user OAuth from a service account
+
+1. **Unset** the `USE_SERVICE_ACCOUNT` environment variable in your environment or hosting platform.
+2. **Remove** `SERVICE_ACCOUNT_JSON` or any `service_account.json` file if present (optional).
+3. Make sure `credentials.json` (OAuth client ID for *Desktop App*) is in the project root.
+4. On first run, users will be prompted to log in with their Google account and grant permissions. The app caches the token in `token.json`.
+
+```sh
+# Example (local)
+# Ensure no service-account env vars are set
+unset USE_SERVICE_ACCOUNT
+unset SERVICE_ACCOUNT_JSON
+
+# Run the app
+streamlit run app.py
+```
 
 ## Usage
 1. Enter your topic and follow the step-by-step prompts to generate instructional content.
