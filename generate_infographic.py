@@ -225,15 +225,15 @@ SCOPES = [
 # Helper functions -----------------------------------------------------------
 # ---------------------------------------------------------------------------
 
+# --- New OAuth web redirect flow ---
 def get_credentials() -> Credentials:
-    """Return valid user credentials (Service Account if USE_SERVICE_ACCOUNT=1, else OAuth 2.0)."""
-    import os, json, sys, webbrowser
-    # ------------------------------------------------------------------
-    # 1) Service-account flow (preferred for headless deployments)       
-    # ------------------------------------------------------------------
+    """Return valid user credentials (Service Account if USE_SERVICE_ACCOUNT=1, else OAuth 2.0 web flow)."""
+    import os, json
+    from pathlib import Path
+    from google_auth_oauthlib.flow import Flow
+
+    # 1) Service-account flow (unchanged)
     if os.environ.get("USE_SERVICE_ACCOUNT") == "1":
-        # Allow passing the service-account JSON via env-var to avoid
-        # writing sensitive credentials to disk in hosted environments.
         sa_json_env = os.environ.get("SERVICE_ACCOUNT_JSON")
         if sa_json_env:
             info = json.loads(sa_json_env)
@@ -246,61 +246,56 @@ def get_credentials() -> Credentials:
             )
         return creds
 
-    # ------------------------------------------------------------------
-    # 2) Installed-app OAuth flow (desktop / local use)                 
-    # ------------------------------------------------------------------
-    creds: Credentials | None = None
-    token_path = pathlib.Path("token.json")
+    # 2) Web app OAuth flow
+    token_path = Path("token.json")
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    if not creds or not creds.valid:
-        # ------------------------------------------------------------------
-        # Streamlit-native OAuth flow (works in headless deployments)        
-        # ------------------------------------------------------------------
-        # Allow providing the OAuth client JSON via env-var so that hosting
-        # platforms (e.g. Streamlit Cloud secrets) don’t need a file on disk.
-        client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        if creds and creds.valid:
+            return creds
 
-        if client_json_env:
-            try:
-                client_cfg = json.loads(client_json_env)
-            except json.JSONDecodeError as exc:
-                st.error(f"Invalid OAUTH_CLIENT_JSON: {exc}")
-                st.stop()
+    # --- Begin OAuth web flow ---
+    client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
+    if not client_json_env:
+        st.error("OAUTH_CLIENT_JSON environment variable is not set. Please provide your OAuth client config as a JSON string.")
+        st.stop()
+    try:
+        client_cfg = json.loads(client_json_env)
+    except json.JSONDecodeError as exc:
+        st.error(f"Invalid OAUTH_CLIENT_JSON: {exc}")
+        st.stop()
 
-            flow = InstalledAppFlow.from_client_config(
-                client_cfg, SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
+    redirect_uri = os.environ.get(
+        "OAUTH_REDIRECT_URI",
+        "https://tuesdaytips-937927832386.europe-west1.run.app/oauth2callback"
+    )
 
-        # Create the authorisation URL and ask the user to visit it in a new tab.
-        auth_url, _ = flow.authorization_url(prompt="consent")
+    # Check for ?code= in the URL (Google redirect)
+    params = st.experimental_get_query_params()
+    code = params.get("code", [None])[0]
 
-        st.info("First-time Google authorisation required.")
-        st.markdown(f"[Click here to authorise →]({auth_url})", unsafe_allow_html=True)
+    if code:
+        # Phase 2: Google redirected back with code
+        state = st.session_state.pop("oauth_state", None)
+        flow = Flow.from_client_config(client_cfg, SCOPES, state=state)
+        flow.redirect_uri = redirect_uri
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+        token_path.write_text(creds.to_json())
+        st.experimental_set_query_params()  # clear ?code=...
+        st.success("Google authorisation complete! Reloading …")
+        _rerun()
+        st.stop()
 
-        # Text box for the one-time code Google shows after consent.
-        code = st.text_input("Paste the code Google gives you and press Enter:")
-
-        # Pause the script until the user provides the code.
-        if not code:
-            st.stop()
-
-        try:
-            flow.fetch_token(code=code.strip())
-            creds = flow.credentials
-            token_path.write_text(creds.to_json())
-            st.success("Authorisation complete! Reloading …")
-            _rerun()  # restart Streamlit so the newly-saved token is picked up
-        except Exception as exc:
-            st.error(f"OAuth error: {exc}")
-            st.stop()
-    return creds
+    # Phase 1: need authorisation
+    flow = Flow.from_client_config(client_cfg, SCOPES)
+    flow.redirect_uri = redirect_uri
+    auth_url, state = flow.authorization_url(prompt="consent")
+    st.session_state["oauth_state"] = state
+    st.info("First-time Google authorisation required.")
+    st.markdown(f"[Click here to authorise with Google]({auth_url})")
+    st.stop()
 
 
 def copy_template_presentation(
