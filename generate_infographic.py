@@ -180,6 +180,8 @@ TEMPLATE_PLACEHOLDERS = [
     "{{Lesson 1 List Point 1}}",
     "{{Lesson 1 List Point 2}}",
     "{{Lesson 1 List Point 3}}",
+    "{{Lesson 1 List Point 4}}",
+    "{{Lesson 1 List Point 5}}",
     "{{Lesson 1 Case Title}}",
     "{{Lesson 1 Case Description}}",
     "{{Lesson 2 Title}}",
@@ -190,6 +192,8 @@ TEMPLATE_PLACEHOLDERS = [
     "{{Lesson 2 List Point 1}}",
     "{{Lesson 2 List Point 2}}",
     "{{Lesson 2 List Point 3}}",
+    "{{Lesson 2 List Point 4}}",
+    "{{Lesson 2 List Point 5}}",
     "{{Lesson 2 Case Title}}",
     "{{Lesson 2 Case Description}}",
     "{{Lesson 3 Title}}",
@@ -200,6 +204,8 @@ TEMPLATE_PLACEHOLDERS = [
     "{{Lesson 3 List Point 1}}",
     "{{Lesson 3 List Point 2}}",
     "{{Lesson 3 List Point 3}}",
+    "{{Lesson 3 List Point 4}}",
+    "{{Lesson 3 List Point 5}}",
     "{{Lesson 3 Case Title}}",
     "{{Lesson 3 Case Description}}",
     "{{Lesson 4 Title}}",
@@ -210,6 +216,8 @@ TEMPLATE_PLACEHOLDERS = [
     "{{Lesson 4 List Point 1}}",
     "{{Lesson 4 List Point 2}}",
     "{{Lesson 4 List Point 3}}",
+    "{{Lesson 4 List Point 4}}",
+    "{{Lesson 4 List Point 5}}",
     "{{Lesson 4 Case Title}}",
     "{{Lesson 4 Case Description}}",
     "{{Activity Title}}",
@@ -536,6 +544,8 @@ Lesson 1: List Slide
 {{Lesson 1 List Point 1}} Max 150 characters Example: Repeat this process at least once every month to track your personal growth.
 {{Lesson 1 List Point 2}} Max 150 characters Example: It’s fine if your answers change over time as you continue to learn about yourself.
 {{Lesson 1 List Point 3}} Max 150 characters Example: Be honest with yourself, as genuine self-reflection is the key to progress.
+{{Lesson 1 List Point 4}} Max 150 characters 
+{{Lesson 1 List Point 5}} Max 150 characters 
 {{Lesson 1 Case Title}} Max 30 Characters Example: Using PICS
 {{Lesson 1 Case Description}} Max 640 Characters Example: Maria felt adrift in her job. Using the PICS self-reflection tool, she journaled to build self-awareness. Passion: She realized she loses track of time when mentoring junior colleagues. Interest: She loves reading about sustainable farming in her free time. Cause: The lack of green spaces in her city frustrates her. Strength: Friends always ask for her help to organize trips, a natural skill for her. This exercise gave her a clearer picture of what truly drives her.
 
@@ -552,6 +562,8 @@ Lesson 2: List Slide
 {{Lesson 2 List Point 1}} Max 150 characters Example: At the end of the week, review your calendar to see how much time was dedicated to your PICS.
 {{Lesson 2 List Point 2}} Max 150 characters Example: Identify one activity that drained you and did not align with your values.
 {{Lesson 2 List Point 3}} Max 150 characters Example: Schedule one activity in the coming week that directly fuels a Passion, Interest, or Cause.
+{{Lesson 2 List Point 4}} Max 150 characters 
+{{Lesson 2 List Point 5}} Max 150 characters 
 {{Lesson 2 Case Title}} Max 30 Characters Example: Jamal's Realignment
 {{Lesson 2 Case Description}} Max 640 Characters Example: Jamal identified 'Creative Writing' as a Passion but realized he spent all his evenings watching TV shows he didn't even like. He felt misaligned and unfulfilled. Audit: He saw 10+ hours of TV and 0 hours of writing in his week. Small Shift: He decided to replace the first 30 minutes of TV time with journaling and story-writing. Result: After a month, he had a new routine, felt more energized, and had the first chapter of a story written. This small alignment had a huge impact on his well-being.
 
@@ -568,6 +580,8 @@ Lesson 3: List Slide
 {{Lesson 3 List Point 1}} Max 150 characters Example: Recognize and write down a limiting thought that holds you back.
 {{Lesson 3 List Point 2}} Max 150 characters Example: Re-examine the thought by questioning if it is 100% true and finding counter-evidence.
 {{Lesson 3 List Point 3}} Max 150 characters Example: Reframe the statement into an empowering one that focuses on your strengths.
+{{Lesson 3 List Point 4}} Max 150 characters 
+{{Lesson 3 List Point 5}} Max 150 characters 
 {{Lesson 3 Case Title}} Max 30 Characters Example: Priya's Breakthrough
 {{Lesson 3 Case Description}} Max 640 Characters Example: Priya's Cause was environmental protection, but she believed, "I'm just one person, I can't make a difference." This thought stopped her from taking any action. Identification: She recognized this thought made her feel helpless and prevented her from volunteering. Reframe: She challenged it by researching local activists and changed her belief to, "My actions can inspire others and contribute to a larger movement." Action: This new belief empowered her to join a local community garden project, where she found her contributions were valued and impactful.
 
@@ -584,6 +598,8 @@ Lesson 4: List Slide
 {{Lesson 4 List Point 1}} Max 150 characters Example: Be specific with your questions when asking for feedback to get actionable advice.
 {{Lesson 4 List Point 2}} Max 150 characters Example: Choose your sources carefully, asking people you trust and who have a relevant perspective.
 {{Lesson 4 List Point 3}} Max 150 characters Example: Listen to understand, not to defend, and thank the person for their input.
+{{Lesson 4 List Point 4}} Max 150 characters 
+{{Lesson 4 List Point 5}} Max 150 characters 
 {{Lesson 4 Case Title}} Max 30 Characters Example: David's Development
 {{Lesson 4 Case Description}} Max 640 Characters Example: David knew 'leadership' was one of his Strengths, but he felt he had stopped improving. He decided to actively seek feedback on it. Specific Question: He asked a trusted colleague, "What's one thing I could start or stop doing to make our project check-ins more productive for the team?" The Feedback: His colleague shared that sometimes he gets so excited he jumps in with solutions before everyone has had a chance to speak. Application: David made a conscious effort to listen first in the next meeting. Not only did the team come up with better ideas, but they also told him it was one of the most collaborative sessions they'd had.
 
@@ -619,6 +635,7 @@ _output_example_raw = """{{Title}} Knowing Yourself
 {{Lesson 2 List Point 1}} At the end of the week, review your calendar to see how much time was dedicated to your PICS.
 {{Lesson 2 List Point 2}} Identify one activity that drained you and did not align with your values.
 {{Lesson 2 List Point 3}} Schedule one activity in the coming week that directly fuels a Passion, Interest, or Cause.
+{{Lesson 2 List Point 4}} Reflect on previous similar activities to inform your starting points for these activities. 
 {{Lesson 2 Case Title}} Jamal's Realignment
 {{Lesson 2 Case Description}} Jamal identified 'Creative Writing' as a Passion but realized he spent all his evenings watching TV shows he didn't even like. He felt misaligned and unfulfilled. Audit: He saw 10+ hours of TV and 0 hours of writing in his week. Small Shift: He decided to replace the first 30 minutes of TV time with journaling and story-writing. Result: After a month, he had a new routine, felt more energized, and had the first chapter of a story written. This small alignment had a huge impact on his well-being.
 
@@ -641,6 +658,8 @@ _output_example_raw = """{{Title}} Knowing Yourself
 {{Lesson 4 List Point 1}} Be specific with your questions when asking for feedback to get actionable advice.
 {{Lesson 4 List Point 2}} Choose your sources carefully, asking people you trust and who have a relevant perspective.
 {{Lesson 4 List Point 3}} Listen to understand, not to defend, and thank the person for their input.
+{{Lesson 4 List Point 4}} Pay attention to what they’re saying and make them feel comfortable.
+{{Lesson 4 List Point 5}} Don’t interrupt as they speak.
 {{Lesson 4 Case Title}} David's Development
 {{Lesson 4 Case Description}} David knew 'leadership' was one of his Strengths, but he felt he had stopped improving. He decided to actively seek feedback on it. Specific Question: He asked a trusted colleague, "What's one thing I could start or stop doing to make our project check-ins more productive for the team?" The Feedback: His colleague shared that sometimes he gets so excited he jumps in with solutions before everyone has had a chance to speak. Application: David made a conscious effort to listen first in the next meeting. Not only did the team come up with better ideas, but they also told him it was one of the most collaborative sessions they'd had.
 
