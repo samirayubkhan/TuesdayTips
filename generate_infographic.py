@@ -15,6 +15,11 @@ import html  # for escaping strings in clipboard button
 import streamlit.components.v1 as components
 import zipfile
 import requests
+import os
+from google.oauth2 import service_account
+
+print("Current working directory:", os.getcwd())
+print("Files in current directory:", os.listdir())
 
 # ---------------------------------------------------------------------------
 # Streamlit rerun helper (must be defined early) ----------------------------
@@ -215,7 +220,14 @@ SCOPES = [
 # ---------------------------------------------------------------------------
 
 def get_credentials() -> Credentials:
-    """Return valid user credentials (OAuth 2.0)."""
+    """Return valid user credentials (Service Account if USE_SERVICE_ACCOUNT=1, else OAuth 2.0)."""
+    import os
+    if os.environ.get("USE_SERVICE_ACCOUNT") == "1":
+        creds = service_account.Credentials.from_service_account_file(
+            "service_account.json", scopes=SCOPES
+        )
+        return creds
+    # Fallback to OAuth flow
     creds: Credentials | None = None
     token_path = pathlib.Path("token.json")
     if token_path.exists():
