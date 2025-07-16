@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Git and other VCS
+.git/
+.gitignore
+
+# Virtual environments
+venv/
+.env/
+
+# macOS
+.DS_Store
+
+# Build outputs
+*.egg-info/
+
+# Local secrets (they should be provided via env variables or Secret Manager in Cloud Run)
+service_account.json 
