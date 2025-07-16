@@ -262,7 +262,15 @@ def get_credentials() -> Credentials:
             # Fallback for headless/server environments – prints auth URL
             # to stdout and waits for the user-pasted code.
             print("⚠️ No system browser detected – switching to console OAuth.", file=sys.stderr)
-            creds = flow.run_console()
+            if hasattr(flow, "run_console"):
+                creds = flow.run_console()
+            else:
+                # Older google-auth-oauthlib versions may not have run_console
+                auth_url, _ = flow.authorization_url(prompt="consent")
+                print("Please visit this URL to authorize the application:\n", auth_url)
+                code = input("Enter the authorization code: ").strip()
+                flow.fetch_token(code=code)
+                creds = flow.credentials
         token_path.write_text(creds.to_json())
     return creds
 
