@@ -254,24 +254,35 @@ def get_credentials() -> Credentials:
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
     if not creds or not creds.valid:
-        flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+        # ------------------------------------------------------------------
+        # Streamlit-native OAuth flow (works in headless deployments)        
+        # ------------------------------------------------------------------
+        flow = InstalledAppFlow.from_client_secrets_file(
+            "credentials.json", SCOPES, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+        )
+
+        # Create the authorisation URL and ask the user to visit it in a new tab.
+        auth_url, _ = flow.authorization_url(prompt="consent")
+
+        st.info("First-time Google authorisation required.")
+        st.markdown(f"[Click here to authorise →]({auth_url})", unsafe_allow_html=True)
+
+        # Text box for the one-time code Google shows after consent.
+        code = st.text_input("Paste the code Google gives you and press Enter:")
+
+        # Pause the script until the user provides the code.
+        if not code:
+            st.stop()
+
         try:
-            # Try the local-server flow first (opens browser automatically)
-            creds = flow.run_local_server(port=0)
-        except (webbrowser.Error, OSError):
-            # Fallback for headless/server environments – prints auth URL
-            # to stdout and waits for the user-pasted code.
-            print("⚠️ No system browser detected – switching to console OAuth.", file=sys.stderr)
-            if hasattr(flow, "run_console"):
-                creds = flow.run_console()
-            else:
-                # Older google-auth-oauthlib versions may not have run_console
-                auth_url, _ = flow.authorization_url(prompt="consent")
-                print("Please visit this URL to authorize the application:\n", auth_url)
-                code = input("Enter the authorization code: ").strip()
-                flow.fetch_token(code=code)
-                creds = flow.credentials
-        token_path.write_text(creds.to_json())
+            flow.fetch_token(code=code.strip())
+            creds = flow.credentials
+            token_path.write_text(creds.to_json())
+            st.success("Authorisation complete! Reloading …")
+            _rerun()  # restart Streamlit so the newly-saved token is picked up
+        except Exception as exc:
+            st.error(f"OAuth error: {exc}")
+            st.stop()
     return creds
 
 
