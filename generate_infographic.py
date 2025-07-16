@@ -154,11 +154,15 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
 # ---------------------------------------------------------------------------
 # Configuration --------------------------------------------------------------
 # ---------------------------------------------------------------------------
+import os as _os  # Added for env-var overrides
 # ⚠️  Replace this with the ID of your own Tuesday-Tips template deck that
 # contains all of the placeholders listed in TEMPLATE_PLACEHOLDERS.
-TEMPLATE_PRESENTATION_ID: str = "1xQTez0asRJzxstqW8zCUtIGpFRlPUH-RtMVL533N1Qs"
+TEMPLATE_PRESENTATION_ID: str = _os.getenv(
+    "TEMPLATE_PRESENTATION_ID",
+    "1xQTez0asRJzxstqW8zCUtIGpFRlPUH-RtMVL533N1Qs",
+)
 # ID of the Google Drive folder where new slide decks should be saved
-DESTINATION_FOLDER_ID: str = "1y-f2hHLl102Wj1ff6cURa7GLT5oaOwpt"
+DESTINATION_FOLDER_ID: str = _os.getenv("DESTINATION_FOLDER_ID", "1y-f2hHLl102Wj1ff6cURa7GLT5oaOwpt")
 
 # The placeholders we expect in the template deck.  These keys are parsed from
 # the user-supplied text and then sent to the Google Slides API in a single
@@ -221,13 +225,28 @@ SCOPES = [
 
 def get_credentials() -> Credentials:
     """Return valid user credentials (Service Account if USE_SERVICE_ACCOUNT=1, else OAuth 2.0)."""
-    import os
+    import os, json, sys, webbrowser
+    # ------------------------------------------------------------------
+    # 1) Service-account flow (preferred for headless deployments)       
+    # ------------------------------------------------------------------
     if os.environ.get("USE_SERVICE_ACCOUNT") == "1":
-        creds = service_account.Credentials.from_service_account_file(
-            "service_account.json", scopes=SCOPES
-        )
+        # Allow passing the service-account JSON via env-var to avoid
+        # writing sensitive credentials to disk in hosted environments.
+        sa_json_env = os.environ.get("SERVICE_ACCOUNT_JSON")
+        if sa_json_env:
+            info = json.loads(sa_json_env)
+            creds = service_account.Credentials.from_service_account_info(
+                info, scopes=SCOPES
+            )
+        else:
+            creds = service_account.Credentials.from_service_account_file(
+                "service_account.json", scopes=SCOPES
+            )
         return creds
-    # Fallback to OAuth flow
+
+    # ------------------------------------------------------------------
+    # 2) Installed-app OAuth flow (desktop / local use)                 
+    # ------------------------------------------------------------------
     creds: Credentials | None = None
     token_path = pathlib.Path("token.json")
     if token_path.exists():
@@ -236,7 +255,14 @@ def get_credentials() -> Credentials:
         creds.refresh(Request())
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-        creds = flow.run_local_server(port=0)
+        try:
+            # Try the local-server flow first (opens browser automatically)
+            creds = flow.run_local_server(port=0)
+        except (webbrowser.Error, OSError):
+            # Fallback for headless/server environments – prints auth URL
+            # to stdout and waits for the user-pasted code.
+            print("⚠️ No system browser detected – switching to console OAuth.", file=sys.stderr)
+            creds = flow.run_console()
         token_path.write_text(creds.to_json())
     return creds
 
