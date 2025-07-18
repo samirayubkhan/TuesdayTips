@@ -159,10 +159,23 @@ def clipboard_button(text: str, label: str = "Copy", key: str | None = None):
 import os as _os  # Added for env-var overrides
 # ⚠️  Replace this with the ID of your own Tuesday-Tips template deck that
 # contains all of the placeholders listed in TEMPLATE_PLACEHOLDERS.
-TEMPLATE_PRESENTATION_ID: str = _os.getenv(
-    "TEMPLATE_PRESENTATION_ID",
-    "1xQTez0asRJzxstqW8zCUtIGpFRlPUH-RtMVL533N1Qs",
-)
+# Template configurations
+TEMPLATE_CONFIGS = {
+    "Template Version 1": {
+        "id": _os.getenv(
+            "TEMPLATE_PRESENTATION_ID",
+            "1xQTez0asRJzxstqW8zCUtIGpFRlPUH-RtMVL533N1Qs",
+        ),
+        "name": "Template Version 1"
+    },
+    "Template Number 2": {
+        "id": "1CgiUM_6ZSkbwDMfKCbvPD3UYL5-7Tirw8_lVAFGA17g",
+        "name": "Template Number 2"
+    }
+}
+
+# Default template for backwards compatibility
+TEMPLATE_PRESENTATION_ID: str = TEMPLATE_CONFIGS["Template Version 1"]["id"]
 # ID of the Google Drive folder where new slide decks should be saved
 DESTINATION_FOLDER_ID: str = _os.getenv("DESTINATION_FOLDER_ID", "1y-f2hHLl102Wj1ff6cURa7GLT5oaOwpt")
 
@@ -310,19 +323,24 @@ def copy_template_presentation(
     drive_service,
     title: str,
     parent_folder_id: str | None = None,
+    template_id: str | None = None,
 ) -> str:
     """Create a copy of the template deck with *title*.
 
     If *parent_folder_id* is provided, the new file will be placed inside that
-    Google Drive folder. Returns the ID of the newly created slide deck.
+    Google Drive folder. If *template_id* is provided, that template will be
+    used instead of the default. Returns the ID of the newly created slide deck.
     """
+    # Use provided template_id or fall back to default
+    template_to_use = template_id or TEMPLATE_PRESENTATION_ID
+    
     # Create the copy first (without parents) to avoid potential 404 errors if
     # the destination folder is not accessible. We will move it in a second
     # call using files.update.
     new_file = (
         drive_service.files()
         .copy(
-            fileId=TEMPLATE_PRESENTATION_ID,
+            fileId=template_to_use,
             body={"name": title},
             fields="id",
             supportsAllDrives=True,
@@ -438,6 +456,23 @@ You will be using Gemini 2.5 Pro to generate the content.
 
 You can access gemini pro here: https://gemini.google.com/
 """)
+
+# Template selection
+st.subheader("📋 Choose Slide Template")
+selected_template = st.selectbox(
+    "Select a slide template to use for your infographic:",
+    options=list(TEMPLATE_CONFIGS.keys()),
+    index=0,
+    help="Choose between different slide templates. Template Version 1 is the original template, Template Number 2 provides an alternative design."
+)
+
+# Store selected template in session state
+if "selected_template" not in st.session_state:
+    st.session_state["selected_template"] = selected_template
+else:
+    st.session_state["selected_template"] = selected_template
+
+st.markdown("---")  # Add separator
 
 topic = st.text_input("Enter the Topic of the Infographic:")
 
@@ -741,7 +776,12 @@ if st.button("Generate Slide Deck", disabled=not user_input.strip()):
                 deck_title = f"{topic.strip()} | {datetime.datetime.utcnow():%Y-%m-%d}"
             else:
                 deck_title = f"Tuesday Tips – {datetime.datetime.utcnow():%Y-%m-%d %H:%M:%S}"
-            new_id = copy_template_presentation(drive_svc, deck_title, DESTINATION_FOLDER_ID)
+            
+            # Get selected template from session state
+            selected_template_key = st.session_state.get("selected_template", "Template Version 1")
+            selected_template_id = TEMPLATE_CONFIGS[selected_template_key]["id"]
+            
+            new_id = copy_template_presentation(drive_svc, deck_title, DESTINATION_FOLDER_ID, selected_template_id)
 
         with st.spinner("Replacing placeholders…"):
             replace_placeholders(slides_svc, new_id, placeholder_map)
