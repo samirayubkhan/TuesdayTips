@@ -659,6 +659,8 @@ _output_example_raw = """{{Title}} Knowing Yourself
 {{Lesson 1 List Point 1}} Repeat this process at least once every month to track your personal growth.
 {{Lesson 1 List Point 2}} It’s fine if your answers change over time as you continue to learn about yourself.
 {{Lesson 1 List Point 3}} Be honest with yourself, as genuine self-reflection is the key to progress.
+{{Lesson 1 List Point 4}} 
+{{Lesson 1 List Point 5}} 
 {{Lesson 1 Case Title}} Using PICS
 {{Lesson 1 Case Description}} Maria felt adrift in her job. Using the PICS self-reflection tool, she journaled to build self-awareness. Passion: She realized she loses track of time when mentoring junior colleagues. Interest: She loves reading about sustainable farming in her free time. Cause: The lack of green spaces in her city frustrates her. Strength: Friends always ask for her help to organize trips, a natural skill for her. This exercise gave her a clearer picture of what truly drives her.
 
@@ -670,7 +672,8 @@ _output_example_raw = """{{Title}} Knowing Yourself
 {{Lesson 2 List Point 1}} At the end of the week, review your calendar to see how much time was dedicated to your PICS.
 {{Lesson 2 List Point 2}} Identify one activity that drained you and did not align with your values.
 {{Lesson 2 List Point 3}} Schedule one activity in the coming week that directly fuels a Passion, Interest, or Cause.
-{{Lesson 2 List Point 4}} Reflect on previous similar activities to inform your starting points for these activities. 
+{{Lesson 2 List Point 4}} Reflect on previous similar activities to inform your starting points for these activities.
+{{Lesson 2 List Point 5}} 
 {{Lesson 2 Case Title}} Jamal's Realignment
 {{Lesson 2 Case Description}} Jamal identified 'Creative Writing' as a Passion but realized he spent all his evenings watching TV shows he didn't even like. He felt misaligned and unfulfilled. Audit: He saw 10+ hours of TV and 0 hours of writing in his week. Small Shift: He decided to replace the first 30 minutes of TV time with journaling and story-writing. Result: After a month, he had a new routine, felt more energized, and had the first chapter of a story written. This small alignment had a huge impact on his well-being.
 
@@ -682,6 +685,8 @@ _output_example_raw = """{{Title}} Knowing Yourself
 {{Lesson 3 List Point 1}} Recognize and write down a limiting thought that holds you back.
 {{Lesson 3 List Point 2}} Re-examine the thought by questioning if it is 100% true and finding counter-evidence.
 {{Lesson 3 List Point 3}} Reframe the statement into an empowering one that focuses on your strengths.
+{{Lesson 3 List Point 4}} 
+{{Lesson 3 List Point 5}} 
 {{Lesson 3 Case Title}} Priya's Breakthrough
 {{Lesson 3 Case Description}} Priya's Cause was environmental protection, but she believed, "I'm just one person, I can't make a difference." This thought stopped her from taking any action. Identification: She recognized this thought made her feel helpless and prevented her from volunteering. Reframe: She challenged it by researching local activists and changed her belief to, "My actions can inspire others and contribute to a larger movement." Action: This new belief empowered her to join a local community garden project, where she found her contributions were valued and impactful.
 
@@ -771,11 +776,11 @@ if st.button("Generate Slide Deck", disabled=not user_input.strip()):
             # Use the topic as the slide deck title; if blank, fall back to a timestamped title
             title_placeholder = placeholder_map.get("{{Title}}", "").strip()
             if title_placeholder:
-                deck_title = f"{title_placeholder} | {datetime.datetime.utcnow():%Y-%m-%d}"
+                deck_title = f"{title_placeholder} | {datetime.datetime.now(datetime.UTC):%Y-%m-%d}"
             elif topic.strip():
-                deck_title = f"{topic.strip()} | {datetime.datetime.utcnow():%Y-%m-%d}"
+                deck_title = f"{topic.strip()} | {datetime.datetime.now(datetime.UTC):%Y-%m-%d}"
             else:
-                deck_title = f"Tuesday Tips – {datetime.datetime.utcnow():%Y-%m-%d %H:%M:%S}"
+                deck_title = f"Tuesday Tips – {datetime.datetime.now(datetime.UTC):%Y-%m-%d %H:%M:%S}"
             
             # Get selected template from session state
             selected_template_key = st.session_state.get("selected_template", "Template Version 1")
