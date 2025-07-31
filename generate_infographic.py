@@ -297,11 +297,13 @@ def get_credentials() -> Credentials:
         code = params.get("code")
         state = params.get("state")
         error = params.get("error")
+        scope = params.get("scope")
     else:
         # Old API
         code = params.get("code", [None])[0]
         state = params.get("state", [None])[0] 
         error = params.get("error", [None])[0]
+        scope = params.get("scope", [None])[0]
     
     # Check for OAuth errors
     if error:
@@ -315,24 +317,25 @@ def get_credentials() -> Credentials:
         flow.redirect_uri = redirect_uri
         
         try:
-            # Debug: Log the code we're trying to use
+            # Debug: Log what we're receiving
             print(f"Attempting to exchange code: {code[:20]}... (truncated)")
             print(f"State parameter: {state}")
+            print(f"Scope returned: {scope}")
+            print(f"Expected scopes: {' '.join(SCOPES)}")
+            
+            # If scope is returned and doesn't match, update the flow
+            if scope:
+                # Parse the returned scope
+                returned_scopes = scope.split()
+                # Only use the scopes we actually need
+                matching_scopes = [s for s in returned_scopes if s in SCOPES]
+                if matching_scopes:
+                    flow = Flow.from_client_config(client_cfg, matching_scopes)
+                    flow.redirect_uri = redirect_uri
             
             # Exchange the authorization code for credentials
-            # The library needs the full authorization response URL
-            authorization_response = st._get_full_url() if hasattr(st, '_get_full_url') else None
-            
-            if authorization_response:
-                print(f"Using full URL: {authorization_response}")
-                flow.fetch_token(authorization_response=authorization_response)
-            else:
-                # Fallback: construct the URL manually
-                authorization_response = f"{redirect_uri}?code={code}"
-                if state:
-                    authorization_response += f"&state={state}"
-                print(f"Using constructed URL: {authorization_response}")
-                flow.fetch_token(authorization_response=authorization_response)
+            # Use the simpler method with just the code
+            flow.fetch_token(code=code)
             
             creds = flow.credentials
             
@@ -348,19 +351,35 @@ def get_credentials() -> Credentials:
         except Exception as e:
             # Clear the code from URL and show error
             st.query_params.clear()
-            st.error(f"Authentication failed: {str(e)}. Please try again.")
+            
+            error_str = str(e)
+            if "Scope has changed" in error_str:
+                st.error("**OAuth Configuration Issue Detected**")
+                st.error("Your Google OAuth client appears to be configured with additional scopes that weren't requested.")
+                st.error("This often happens when the OAuth client was created as part of a Google Apps Script project.")
+                st.info("**To fix this:**")
+                st.info("1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)")
+                st.info("2. Create a new OAuth 2.0 Client ID (Web application type)")
+                st.info("3. Set the authorized redirect URI to: `https://alxtuesdaytips.streamlit.app/`")
+                st.info("4. Update the OAUTH_CLIENT_JSON secret in Streamlit with the new credentials")
+                st.info("5. Make sure NOT to use an OAuth client from a Google Apps Script project")
+            else:
+                st.error(f"Authentication failed: {error_str}")
+            
             print(f"Full error details: {e}")
+            print(f"Error type: {type(e)}")
             # Don't stop here, let user try again
 
     # Show authorization button
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
     
-    # Generate authorization URL without PKCE to simplify
+    # Generate authorization URL with explicit parameters
     auth_url, _ = flow.authorization_url(
         prompt="consent",
         access_type="offline",
-        include_granted_scopes="true"
+        include_granted_scopes="false",  # Important: don't include additional scopes
+        scope=' '.join(SCOPES)  # Explicitly set the scopes
     )
     
     st.info("Google authorisation required to generate slides.")
