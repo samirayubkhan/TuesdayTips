@@ -251,19 +251,20 @@ def get_credentials() -> Credentials:
     """Return valid user credentials via OAuth 2.0 web flow."""
     import os
     import json
-    from pathlib import Path
     from google_auth_oauthlib.flow import Flow
 
-    # Web app OAuth flow
-    token_path = Path("token.json")
-    if token_path.exists():
-        creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
-        if creds and creds.expired and creds.refresh_token:
+    # 1. Check for credentials in session state first
+    if "creds" in st.session_state:
+        creds = st.session_state["creds"]
+        # If expired, and we have a refresh token, refresh them
+        if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-        if creds and creds.valid:
+            st.session_state["creds"] = creds  # Update the session
+        # Return valid credentials
+        if creds.valid:
             return creds
 
-    # --- Begin OAuth web flow ---
+    # --- Begin OAuth web flow if no valid creds ---
     client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
     if not client_json_env:
         st.error("OAUTH_CLIENT_JSON environment variable is not set. Please provide your OAuth client config as a JSON string.")
@@ -279,24 +280,34 @@ def get_credentials() -> Credentials:
         "https://alxtuesdaytips.streamlit.app/"
     )
 
-    # Check for ?code= in the URL (Google redirect)
+    # Check for authorization code in URL
     params = st.query_params
     code = params.get("code", [None])[0]
 
     if code:
-        # Phase 2: Google redirected back with code
+        # Phase 2: Google redirected back with an authorization code
         state = st.session_state.pop("oauth_state", None)
         flow = Flow.from_client_config(client_cfg, SCOPES, state=state)
         flow.redirect_uri = redirect_uri
-        flow.fetch_token(code=code)
-        creds = flow.credentials
-        token_path.write_text(creds.to_json())
-        st.query_params.clear()  # clear ?code=...
-        st.success("Google authorisation complete! Reloading …")
-        _rerun()
-        st.stop()
+        
+        try:
+            # Exchange the code for credentials
+            flow.fetch_token(code=code)
+            creds = flow.credentials
+            
+            # Store credentials in session state for future runs
+            st.session_state["creds"] = creds
+            
+            # Clear the authorization code from the URL and rerun the app
+            st.query_params.clear()
+            _rerun()
+            st.stop()
 
-    # Phase 1: need authorisation
+        except Exception as e:
+            st.error(f"Authentication failed: {e}. Please try authorizing again.")
+            st.stop()
+
+    # Phase 1: Need user authorization
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
     auth_url, state = flow.authorization_url(prompt="consent")
@@ -436,6 +447,10 @@ st.set_page_config(page_title="Generate Infographic", page_icon="💡", layout="
 
 def check_password():
     """Returns `True` if the user has the correct password."""
+
+    # If returning from OAuth, bypass password check
+    if "code" in st.query_params:
+        st.session_state["password_correct"] = True
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
