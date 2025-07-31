@@ -452,11 +452,16 @@ def check_password():
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == "generateamazingtipsALX":
+        if st.session_state["password"] == os.environ.get("APP_PASSWORD"):
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # Don't store the password.
         else:
             st.session_state["password_correct"] = False
+
+    # Stop the app if the password is not set in the environment variables
+    if not os.environ.get("APP_PASSWORD"):
+        st.error("The app is not configured with a password. Please set the APP_PASSWORD environment variable.")
+        st.stop()
 
     if "password_correct" not in st.session_state:
         # First run, show input for password.
