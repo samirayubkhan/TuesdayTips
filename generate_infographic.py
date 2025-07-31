@@ -253,22 +253,22 @@ def get_credentials() -> Credentials:
     """Return valid user credentials via OAuth 2.0 web flow."""
     import os
     import json
-    from pathlib import Path
     from google_auth_oauthlib.flow import Flow
 
-    # Load token from disk for persistence across sessions
-    token_path = Path("token.json")
-    if token_path.exists():
+    # Check for credentials in session state first
+    if "google_creds" in st.session_state:
+        creds_data = st.session_state["google_creds"]
         try:
-            creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
+            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-                token_path.write_text(creds.to_json())
+                # Update session state with refreshed credentials
+                st.session_state["google_creds"] = json.loads(creds.to_json())
             if creds and creds.valid:
                 return creds
-        except Exception:
-            # If token file is corrupted, delete it
-            token_path.unlink(missing_ok=True)
+        except Exception as e:
+            print(f"Error loading credentials from session: {e}")
+            del st.session_state["google_creds"]
 
     # Load OAuth configuration
     client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
@@ -286,8 +286,28 @@ def get_credentials() -> Credentials:
 
     # Check if we have an authorization code from Google
     params = st.query_params
-    code = params.get("code", [None])[0]
     
+    # Debug: Show all query parameters
+    if params:
+        print(f"Query parameters received: {dict(params)}")
+    
+    # Handle both the old and new Streamlit query param APIs
+    if hasattr(params, 'get'):
+        # New API
+        code = params.get("code")
+        state = params.get("state")
+        error = params.get("error")
+    else:
+        # Old API
+        code = params.get("code", [None])[0]
+        state = params.get("state", [None])[0] 
+        error = params.get("error", [None])[0]
+    
+    # Check for OAuth errors
+    if error:
+        st.error(f"OAuth error: {error}")
+        st.query_params.clear()
+        
     if code:
         # We're returning from Google with an authorization code
         # Create a new flow and exchange it for credentials
@@ -295,13 +315,29 @@ def get_credentials() -> Credentials:
         flow.redirect_uri = redirect_uri
         
         try:
+            # Debug: Log the code we're trying to use
+            print(f"Attempting to exchange code: {code[:20]}... (truncated)")
+            print(f"State parameter: {state}")
+            
             # Exchange the authorization code for credentials
-            # The library handles PKCE automatically
-            flow.fetch_token(code=code)
+            # The library needs the full authorization response URL
+            authorization_response = st._get_full_url() if hasattr(st, '_get_full_url') else None
+            
+            if authorization_response:
+                print(f"Using full URL: {authorization_response}")
+                flow.fetch_token(authorization_response=authorization_response)
+            else:
+                # Fallback: construct the URL manually
+                authorization_response = f"{redirect_uri}?code={code}"
+                if state:
+                    authorization_response += f"&state={state}"
+                print(f"Using constructed URL: {authorization_response}")
+                flow.fetch_token(authorization_response=authorization_response)
+            
             creds = flow.credentials
             
-            # Save credentials to disk
-            token_path.write_text(creds.to_json())
+            # Save credentials to session state
+            st.session_state["google_creds"] = json.loads(creds.to_json())
             
             # Clear the URL parameters
             st.query_params.clear()
@@ -313,13 +349,14 @@ def get_credentials() -> Credentials:
             # Clear the code from URL and show error
             st.query_params.clear()
             st.error(f"Authentication failed: {str(e)}. Please try again.")
+            print(f"Full error details: {e}")
             # Don't stop here, let user try again
 
     # Show authorization button
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
     
-    # Generate authorization URL
+    # Generate authorization URL without PKCE to simplify
     auth_url, _ = flow.authorization_url(
         prompt="consent",
         access_type="offline",
