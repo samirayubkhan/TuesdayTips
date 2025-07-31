@@ -20,7 +20,7 @@ from google.oauth2 import service_account
 import urllib.parse
 from google_auth_oauthlib.flow import Flow
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
-import secrets, base64, hashlib
+import secrets, base64, json as _json
 
 print("Current working directory:", os.getcwd())
 print("Files in current directory:", os.listdir())
@@ -248,18 +248,32 @@ SCOPES = [
 # Helper functions -----------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-# --- New OAuth web redirect flow ---
+def _pack_state(google_state: str, code_verifier: str) -> str:
+    """Return URL-safe base64 encoded JSON containing google_state & code_verifier."""
+    payload = _json.dumps({"s": google_state, "v": code_verifier}).encode()
+    return base64.urlsafe_b64encode(payload).decode().rstrip("=")
+
+
+def _unpack_state(encoded: str) -> tuple[str, str] | None:
+    """Decode packed state. Returns (google_state, code_verifier) or None on error."""
+    padding = "=" * (-len(encoded) % 4)  # restore removed padding
+    try:
+        data = base64.urlsafe_b64decode(encoded + padding)
+        obj = _json.loads(data)
+        return obj.get("s"), obj.get("v")
+    except Exception:
+        return None
+
+
 def _build_auth_link(flow):
-    """Return auth_url where state = google_state|code_verifier."""
+    """Return auth_url with packed state parameter."""
     auth_url, google_state = flow.authorization_url(prompt="consent")
-    combined_state = f"{google_state}|{flow.code_verifier}"
-    # Replace state param in the auth_url
+    packed = _pack_state(google_state, flow.code_verifier)
     parsed = urlparse(auth_url)
-    q = parse_qs(parsed.query)
-    q["state"] = [combined_state]
+    q = parse_qs(parsed.query, keep_blank_values=True)
+    q["state"] = [packed]
     new_query = urlencode(q, doseq=True)
-    new_url = urlunparse(parsed._replace(query=new_query))
-    return new_url, combined_state.split("|")[0], combined_state.split("|")[1]
+    return urlunparse(parsed._replace(query=new_query))
 
 
 def get_credentials() -> Credentials:
@@ -297,12 +311,11 @@ def get_credentials() -> Credentials:
     combined_state = params.get("state", [None])[0]
 
     if code and combined_state:
-        try:
-            orig_state, code_verifier = combined_state.split("|", 1)
-        except ValueError:
+        unpacked = _unpack_state(combined_state)
+        if not unpacked:
             st.error("Invalid state parameter returned from Google. Please try authorising again.")
             st.stop()
-
+        orig_state, code_verifier = unpacked
         flow = Flow.from_client_config(client_cfg, SCOPES, state=orig_state)
         flow.redirect_uri = redirect_uri
         flow.code_verifier = code_verifier
@@ -320,7 +333,7 @@ def get_credentials() -> Credentials:
     # First phase: ask user to authorise
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
-    auth_url, _, _ = _build_auth_link(flow)
+    auth_url = _build_auth_link(flow)
 
     st.info("First-time Google authorisation required.")
     st.markdown(f"[Click here to authorise with Google]({auth_url})")
