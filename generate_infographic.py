@@ -248,27 +248,13 @@ SCOPES = [
 
 # --- New OAuth web redirect flow ---
 def get_credentials() -> Credentials:
-    """Return valid user credentials (Service Account if USE_SERVICE_ACCOUNT=1, else OAuth 2.0 web flow)."""
-    import os, json
+    """Return valid user credentials via OAuth 2.0 web flow."""
+    import os
+    import json
     from pathlib import Path
     from google_auth_oauthlib.flow import Flow
 
-    # 1) Service-account flow (unchanged)
-    if os.environ.get("USE_SERVICE_ACCOUNT") == "1":
-        sa_json_env = os.environ.get("SERVICE_ACCOUNT_JSON")
-        if sa_json_env:
-            info = json.loads(sa_json_env)
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=SCOPES
-            )
-        else:
-            creds = service_account.Credentials.from_service_account_file(
-                "service_account.json", scopes=SCOPES
-            )
-        creds.refresh(Request())
-        return creds
-
-    # 2) Web app OAuth flow
+    # Web app OAuth flow
     token_path = Path("token.json")
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
