@@ -544,6 +544,13 @@ def check_password():
     # If returning from OAuth, bypass password check
     if "code" in st.query_params:
         st.session_state["password_correct"] = True
+    # Allow auto-login if the correct PIN is provided as a URL query param, e.g. ?pin=1234
+    elif "pin" in st.query_params:
+        pin_param = st.query_params.get("pin") if hasattr(st.query_params, "get") else st.query_params.get("pin", [None])[0]
+        if pin_param and pin_param == os.environ.get("APP_PASSWORD"):
+            st.session_state["password_correct"] = True
+            # Optionally clear the PIN from the URL for cleanliness and security
+            st.query_params.clear()
 
     def password_entered():
         """Checks whether the 4-digit PIN entered by the user is correct."""
