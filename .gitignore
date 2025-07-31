@@ -103,3 +103,4 @@ token.json
 
 # VS Code
 .vscode/ client_secret_*.json
+client_secret_*.json
