@@ -522,30 +522,35 @@ def check_password():
         st.session_state["password_correct"] = True
 
     def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == os.environ.get("APP_PASSWORD"):
+        """Checks whether the 4-digit PIN entered by the user is correct."""
+        entered_pin = st.session_state["password"]
+        stored_pin = os.environ.get("APP_PASSWORD")  # PIN stored in env var
+        # Validate: must be exactly 4 digits and match stored PIN
+        if entered_pin.isdigit() and len(entered_pin) == 4 and entered_pin == stored_pin:
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Don't store the password.
+            del st.session_state["password"]  # Don't store the PIN.
         else:
             st.session_state["password_correct"] = False
-
-    # Stop the app if the password is not set in the environment variables
+            
+    # Stop the app if the PIN is not set in the environment variables
     if not os.environ.get("APP_PASSWORD"):
-        st.error("The app is not configured with a password. Please set the APP_PASSWORD environment variable.")
+        st.error("The app is not configured with a 4-digit PIN. Please set the APP_PASSWORD environment variable (e.g. 1234).")
         st.stop()
 
     if "password_correct" not in st.session_state:
-        # First run, show input for password.
+        # First run, show input for PIN.
         st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
+            "Enter 4-digit PIN", type="password", on_change=password_entered, key="password",
+            placeholder="0000"
         )
         return False
     elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
+        # PIN not correct, show input + error.
         st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
+            "Enter 4-digit PIN", type="password", on_change=password_entered, key="password",
+            placeholder="0000"
         )
-        st.error("😕 Password incorrect")
+        st.error("😕 PIN incorrect – please enter the correct 4-digit PIN")
         return False
     else:
         # Password correct.
