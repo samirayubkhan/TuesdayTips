@@ -19,8 +19,6 @@ import os
 from google.oauth2 import service_account
 import urllib.parse
 from google_auth_oauthlib.flow import Flow
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
-import secrets, base64, json as _json
 
 print("Current working directory:", os.getcwd())
 print("Files in current directory:", os.listdir())
@@ -247,35 +245,10 @@ SCOPES = [
 # ---------------------------------------------------------------------------
 # Helper functions -----------------------------------------------------------
 # ---------------------------------------------------------------------------
+# Helper functions -----------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-def _pack_state(google_state: str, code_verifier: str) -> str:
-    """Return URL-safe base64 encoded JSON containing google_state & code_verifier."""
-    payload = _json.dumps({"s": google_state, "v": code_verifier}).encode()
-    return base64.urlsafe_b64encode(payload).decode().rstrip("=")
-
-
-def _unpack_state(encoded: str) -> tuple[str, str] | None:
-    """Decode packed state. Returns (google_state, code_verifier) or None on error."""
-    padding = "=" * (-len(encoded) % 4)  # restore removed padding
-    try:
-        data = base64.urlsafe_b64decode(encoded + padding)
-        obj = _json.loads(data)
-        return obj.get("s"), obj.get("v")
-    except Exception:
-        return None
-
-
-def _build_auth_link(flow):
-    """Return auth_url with packed state parameter."""
-    auth_url, google_state = flow.authorization_url(prompt="consent")
-    packed = _pack_state(google_state, flow.code_verifier)
-    parsed = urlparse(auth_url)
-    q = parse_qs(parsed.query, keep_blank_values=True)
-    q["state"] = [packed]
-    new_query = urlencode(q, doseq=True)
-    return urlunparse(parsed._replace(query=new_query))
-
-
+# --- New OAuth web redirect flow ---
 def get_credentials() -> Credentials:
     """Return valid user credentials via OAuth 2.0 web flow."""
     import os
@@ -286,56 +259,74 @@ def get_credentials() -> Credentials:
     # Load token from disk for persistence across sessions
     token_path = Path("token.json")
     if token_path.exists():
-        creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            token_path.write_text(creds.to_json())
-        if creds and creds.valid:
-            return creds
+        try:
+            creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                token_path.write_text(creds.to_json())
+            if creds and creds.valid:
+                return creds
+        except Exception:
+            # If token file is corrupted, delete it
+            token_path.unlink(missing_ok=True)
 
+    # Load OAuth configuration
     client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
     if not client_json_env:
         st.error("OAUTH_CLIENT_JSON environment variable is not set. Please provide your OAuth client config as a JSON string.")
         st.stop()
+    
     try:
         client_cfg = json.loads(client_json_env)
     except json.JSONDecodeError as exc:
         st.error(f"Invalid OAUTH_CLIENT_JSON: {exc}")
         st.stop()
 
-    redirect_uri = os.environ.get("OAUTH_REDIRECT_URI", "https://alxtuesdaytips.streamlit.app/")
+    redirect_uri = "https://alxtuesdaytips.streamlit.app/"
 
-    # Handle redirect back from Google
+    # Check if we have an authorization code from Google
     params = st.query_params
     code = params.get("code", [None])[0]
-    combined_state = params.get("state", [None])[0]
-
-    if code and combined_state:
-        unpacked = _unpack_state(combined_state)
-        if not unpacked:
-            st.error("Invalid state parameter returned from Google. Please try authorising again.")
-            st.stop()
-        orig_state, code_verifier = unpacked
-        flow = Flow.from_client_config(client_cfg, SCOPES, state=orig_state)
+    
+    if code:
+        # We're returning from Google with an authorization code
+        # Create a new flow and exchange it for credentials
+        flow = Flow.from_client_config(client_cfg, SCOPES)
         flow.redirect_uri = redirect_uri
-        flow.code_verifier = code_verifier
+        
         try:
+            # Exchange the authorization code for credentials
+            # The library handles PKCE automatically
             flow.fetch_token(code=code)
             creds = flow.credentials
+            
+            # Save credentials to disk
             token_path.write_text(creds.to_json())
+            
+            # Clear the URL parameters
             st.query_params.clear()
+            
+            # Rerun to use the new credentials
             _rerun()
-            st.stop()
+            
         except Exception as e:
-            st.error(f"Authentication failed: {e}. Please try authorizing again.")
-            st.stop()
+            # Clear the code from URL and show error
+            st.query_params.clear()
+            st.error(f"Authentication failed: {str(e)}. Please try again.")
+            # Don't stop here, let user try again
 
-    # First phase: ask user to authorise
+    # Show authorization button
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
-    auth_url = _build_auth_link(flow)
-
-    st.info("First-time Google authorisation required.")
+    
+    # Generate authorization URL
+    auth_url, _ = flow.authorization_url(
+        prompt="consent",
+        access_type="offline",
+        include_granted_scopes="true"
+    )
+    
+    st.info("Google authorisation required to generate slides.")
     st.markdown(f"[Click here to authorise with Google]({auth_url})")
     st.stop()
 
