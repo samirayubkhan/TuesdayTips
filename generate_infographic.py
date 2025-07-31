@@ -276,7 +276,7 @@ def get_credentials() -> Credentials:
 
     redirect_uri = os.environ.get(
         "OAUTH_REDIRECT_URI",
-        "https://tuesdaytips-937927832386.europe-west1.run.app/"
+        "https://alxtuesdaytips.streamlit.app/"
     )
 
     # Check for ?code= in the URL (Google redirect)
