@@ -378,8 +378,7 @@ def get_credentials() -> Credentials:
     auth_url, _ = flow.authorization_url(
         prompt="consent",
         access_type="offline",
-        include_granted_scopes="false",  # Important: don't include additional scopes
-        scope=' '.join(SCOPES)  # Explicitly set the scopes
+        include_granted_scopes="false"
     )
     
     st.info("Google authorisation required to generate slides.")
