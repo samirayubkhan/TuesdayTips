@@ -265,6 +265,7 @@ def get_credentials() -> Credentials:
             creds = service_account.Credentials.from_service_account_file(
                 "service_account.json", scopes=SCOPES
             )
+        creds.refresh(Request())
         return creds
 
     # 2) Web app OAuth flow
