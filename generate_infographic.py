@@ -280,7 +280,7 @@ def get_credentials() -> Credentials:
     )
 
     # Check for ?code= in the URL (Google redirect)
-    params = st.experimental_get_query_params()
+    params = st.query_params
     code = params.get("code", [None])[0]
 
     if code:
@@ -291,7 +291,7 @@ def get_credentials() -> Credentials:
         flow.fetch_token(code=code)
         creds = flow.credentials
         token_path.write_text(creds.to_json())
-        st.experimental_set_query_params()  # clear ?code=...
+        st.query_params.clear()  # clear ?code=...
         st.success("Google authorisation complete! Reloading …")
         _rerun()
         st.stop()
