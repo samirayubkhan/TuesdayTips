@@ -254,6 +254,26 @@ def get_credentials() -> Credentials:
     import os
     import json
     from google_auth_oauthlib.flow import Flow
+    import pathlib  # for token storage
+
+    token_path = pathlib.Path("google_token.json")
+
+    # ------------------------------------------------------------------
+    # 1️⃣  Attempt to load credentials from disk first -----------------
+    # ------------------------------------------------------------------
+    if token_path.exists():
+        try:
+            creds = Credentials.from_authorized_user_info(json.loads(token_path.read_text()), SCOPES)
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            if creds and creds.valid:
+                # Also store in session_state for quicker access during this session
+                st.session_state["google_creds"] = json.loads(creds.to_json())
+                # Persist any refreshed token back to disk
+                token_path.write_text(creds.to_json())
+                return creds
+        except Exception as e:
+            print(f"Stored token invalid or unreadable: {e}. It will be ignored and a new auth flow will start.")
 
     # Check for credentials in session state first
     if "google_creds" in st.session_state:
@@ -264,6 +284,8 @@ def get_credentials() -> Credentials:
                 creds.refresh(Request())
                 # Update session state with refreshed credentials
                 st.session_state["google_creds"] = json.loads(creds.to_json())
+                # Persist refreshed token to disk
+                token_path.write_text(creds.to_json())
             if creds and creds.valid:
                 return creds
         except Exception as e:
@@ -341,6 +363,8 @@ def get_credentials() -> Credentials:
             
             # Save credentials to session state
             st.session_state["google_creds"] = json.loads(creds.to_json())
+            # Also persist to disk for future sessions
+            token_path.write_text(creds.to_json())
             
             # Clear the URL parameters
             st.query_params.clear()
