@@ -286,8 +286,15 @@ def get_credentials() -> Credentials:
 
     if code:
         # Phase 2: Google redirected back with an authorization code
-        state = st.session_state.pop("oauth_state", None)
-        flow = Flow.from_client_config(client_cfg, SCOPES, state=state)
+        # Retrieve the Flow object we created earlier so that the PKCE
+        # code_verifier matches. If it's missing (e.g., user refreshed),
+        # gracefully tell the user to try again.
+        flow = st.session_state.pop("oauth_flow", None)
+        if flow is None:
+            st.error("Authorisation session expired. Please try authorising again.")
+            st.stop()
+
+        # Safety: ensure redirect_uri is still correct
         flow.redirect_uri = redirect_uri
         
         try:
@@ -311,6 +318,10 @@ def get_credentials() -> Credentials:
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
     auth_url, state = flow.authorization_url(prompt="consent")
+
+    # Store flow and state so we can reuse it after redirect (important for
+    # PKCE code_verifier matching).
+    st.session_state["oauth_flow"] = flow
     st.session_state["oauth_state"] = state
     st.info("First-time Google authorisation required.")
     st.markdown(f"[Click here to authorise with Google]({auth_url})")
