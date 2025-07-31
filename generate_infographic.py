@@ -19,6 +19,8 @@ import os
 from google.oauth2 import service_account
 import urllib.parse
 from google_auth_oauthlib.flow import Flow
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+import secrets, base64, hashlib
 
 print("Current working directory:", os.getcwd())
 print("Files in current directory:", os.listdir())
@@ -247,24 +249,36 @@ SCOPES = [
 # ---------------------------------------------------------------------------
 
 # --- New OAuth web redirect flow ---
+def _build_auth_link(flow):
+    """Return auth_url where state = google_state|code_verifier."""
+    auth_url, google_state = flow.authorization_url(prompt="consent")
+    combined_state = f"{google_state}|{flow.code_verifier}"
+    # Replace state param in the auth_url
+    parsed = urlparse(auth_url)
+    q = parse_qs(parsed.query)
+    q["state"] = [combined_state]
+    new_query = urlencode(q, doseq=True)
+    new_url = urlunparse(parsed._replace(query=new_query))
+    return new_url, combined_state.split("|")[0], combined_state.split("|")[1]
+
+
 def get_credentials() -> Credentials:
     """Return valid user credentials via OAuth 2.0 web flow."""
     import os
     import json
+    from pathlib import Path
     from google_auth_oauthlib.flow import Flow
 
-    # 1. Check for credentials in session state first
-    if "creds" in st.session_state:
-        creds = st.session_state["creds"]
-        # If expired, and we have a refresh token, refresh them
-        if creds.expired and creds.refresh_token:
+    # Load token from disk for persistence across sessions
+    token_path = Path("token.json")
+    if token_path.exists():
+        creds = Credentials.from_authorized_user_file(token_path.as_posix(), SCOPES)
+        if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            st.session_state["creds"] = creds  # Update the session
-        # Return valid credentials
-        if creds.valid:
+            token_path.write_text(creds.to_json())
+        if creds and creds.valid:
             return creds
 
-    # --- Begin OAuth web flow if no valid creds ---
     client_json_env = os.environ.get("OAUTH_CLIENT_JSON")
     if not client_json_env:
         st.error("OAUTH_CLIENT_JSON environment variable is not set. Please provide your OAuth client config as a JSON string.")
@@ -275,43 +289,39 @@ def get_credentials() -> Credentials:
         st.error(f"Invalid OAUTH_CLIENT_JSON: {exc}")
         st.stop()
 
-    redirect_uri = os.environ.get(
-        "OAUTH_REDIRECT_URI",
-        "https://alxtuesdaytips.streamlit.app/"
-    )
+    redirect_uri = os.environ.get("OAUTH_REDIRECT_URI", "https://alxtuesdaytips.streamlit.app/")
 
-    # Check for authorization code in URL
+    # Handle redirect back from Google
     params = st.query_params
     code = params.get("code", [None])[0]
+    combined_state = params.get("state", [None])[0]
 
-    if code:
-        # Phase 2: Google redirected back with an authorization code
-        # Create a new flow and exchange the code for tokens
-        flow = Flow.from_client_config(client_cfg, SCOPES)
-        flow.redirect_uri = redirect_uri
-        
+    if code and combined_state:
         try:
-            # Exchange the code for credentials
+            orig_state, code_verifier = combined_state.split("|", 1)
+        except ValueError:
+            st.error("Invalid state parameter returned from Google. Please try authorising again.")
+            st.stop()
+
+        flow = Flow.from_client_config(client_cfg, SCOPES, state=orig_state)
+        flow.redirect_uri = redirect_uri
+        flow.code_verifier = code_verifier
+        try:
             flow.fetch_token(code=code)
             creds = flow.credentials
-            
-            # Store credentials in session state for future runs
-            st.session_state["creds"] = creds
-            
-            # Clear the authorization code from the URL and rerun the app
+            token_path.write_text(creds.to_json())
             st.query_params.clear()
             _rerun()
             st.stop()
-
         except Exception as e:
             st.error(f"Authentication failed: {e}. Please try authorizing again.")
             st.stop()
 
-    # Phase 1: Need user authorization
+    # First phase: ask user to authorise
     flow = Flow.from_client_config(client_cfg, SCOPES)
     flow.redirect_uri = redirect_uri
-    auth_url, state = flow.authorization_url(prompt="consent")
-    
+    auth_url, _, _ = _build_auth_link(flow)
+
     st.info("First-time Google authorisation required.")
     st.markdown(f"[Click here to authorise with Google]({auth_url})")
     st.stop()
